@@ -1,34 +1,73 @@
-# Prerequisites
-*.d
+#include "C:\Users\user\Desktop\gas booking\gas booking.h" 
+#use rs232(baud=9600, xmit=PIN_C6,rcv=PIN_C7,stream=GSM) 
+#include <lcd.c>
+int16 weight=0, gas=0,flag=0,smoke=0;
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+check_cylinder()
 
-# Precompiled Headers
-*.gch
-*.pch
+ {
+   set_adc_channel( 1 );
+   delay_ms(10);
+   weight= read_adc(); 
+   weight=weight*.098;
+   weight=100-weight; 
+   return weight;
+ } 
+ 
+ check_smoke()
+ {
+  set_adc_channel( 2 );
+  delay_ms(10);
+  smoke= read_adc();
+  smoke=smoke*.098; return smoke;
+ }
+ 
+  void send_msg()
+ {
+  fprintf(GSM,"AT\r\n");
+  delay_ms(500);
+  fprintf(GSM,"AT+CMGF=1\r\n");
+  delay_ms(500);
+  fprintf(GSM,"AT+CMGS="8137889447"\r\n");
+  delay_ms(500); 
+  fprintf(GSM," SET THE MSG ");
+  fputc(0x1A,GSM);
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+}
 
-# Fortran module files
-*.mod
-*.smod
+void main() 
+{
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+ setup_adc_ports(ALL_ANALOG); 
+ setup_adc(ADC_CLOCK_INTERNAL);
+ lcd_init();
+ lcd_gotoxy(1,1);
+ printf(lcd_putc,"loading.....");
+ 
+    while(1)
+  { 
+   gas=check_leakage();
+   weight=check_cylinder(); 
+   lcd_gotoxy(1,1);
+   printf(lcd_putc,"%lu",weight); lcd_gotoxy(1,2);
+   printf(lcd_putc,"%lu",gas);
+   if(gas>2) { output_high(pin_b0);
+  } 
+   else
+  {  
+    output_low(pin_b0);
+  } 
+    if((weight<30)&& (flag==0)) 
+  {
 
-# Execut011603
-011603
-011603
-011603
-011603
+    send_msg(); 
+    flag=1;
+  } 
+    if(weight<95)
+  { 
+   flag=0; 
+  }
+}
+}
+
 
